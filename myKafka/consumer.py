@@ -99,10 +99,13 @@ class SummaryConsumer(Consumer):
                         result = c1.request([data])
                         print(result)
                         
-                        rs_id = summaries.insert_summaries(r_id, result["summarization"])
-                        print(rs_id)
-                        if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
-                        pd.send(rs_id)
+                        response = {
+                            "id": r_id,
+                            "summarization": result["summarization"],
+                            "keywords": result['keywords']
+                        }
+                        
+                        pd.send(response)
                         
             except KeyboardInterrupt:
                 print(f'Error occured while consuming topic {self.topic}')
