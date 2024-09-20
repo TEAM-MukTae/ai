@@ -1,11 +1,11 @@
 from database.connection import get_connection
 from database.query_constant import INSERT_KEYWORDS
 
-def insert_keywords(rs_id: int, names: list) -> tuple:
+def insert_keywords(r_id, rs_id: int, names: list) -> tuple:
     with get_connection() as connection:
         try:
             with connection.cursor() as cursor:
-                print(INSERT_KEYWORDS(rs_id, names))
+                print(INSERT_KEYWORDS(r_id, rs_id, names))
                 cursor.execute(INSERT_KEYWORDS(rs_id, names), (names))
                 connection.commit()
             
