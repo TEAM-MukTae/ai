@@ -21,11 +21,11 @@ Domain Knowledge :
 %s
 '''
 Summarize and correct about the Domain Knowledge in Korean And suggest me 4 important keywords about the Domain Knowledge.
-Give me the "title" representing the "summarization".
-And emphasize the "title" and important "keywords" in "summarization" using Markdown format
+Include title text inside the "summarization".
+And emphasize the "title" insidee the "summarization" and important "keywords" in "summarization" using Markdown format
 Return your response entirely in the form of a JSON object. 
 The JSON object should have a key named "summarization" which is a result of summarization and correction. 
-Also have a key named "keywords", which is array of each keyword And have a key named "title", which represents the title of the summarization.
+Also have a key named "keywords", which is array of each keyword.
 """
 
 class OpenClient:
