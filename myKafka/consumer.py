@@ -82,7 +82,7 @@ class SummaryConsumer(Consumer):
             while self.running:
                 for message in client:
                     if not message or message == '': continue
-                    r_id = message.value
+                    r_id = json.loads(message.value)
                     print('Summary', r_id)
 
                     record = records.fetch_records_one(r_id)
