@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  muktae-ai:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: "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"
+

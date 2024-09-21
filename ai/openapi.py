@@ -28,9 +28,10 @@ The JSON object should have a key named "summarization" which is a result of sum
 Also have a key named "keywords", which is array of each keyword.
 """
 
+KEY = os.environ['OPENAI_API_KEY']
 class OpenClient:
     
-    def __init__(self, prompt: str, role: str, key = os.environ.get("OPEN_API_KEY")):
+    def __init__(self, prompt: str, role: str, key = KEY):
         self.model = 'gpt-4o-mini'
         self.prompt = prompt
         self.role = role
@@ -54,7 +55,7 @@ class OpenClient:
 
 class TestClient(OpenClient):
     
-    def __init__(self, prompt: str, role: str, key=os.environ.get("OPEN_API_KEY")):
+    def __init__(self, prompt: str, role: str, key = KEY):
         super().__init__(prompt, role, key)
         
     def request(self, metadata):
@@ -65,8 +66,7 @@ class MultiChoiceClient(OpenClient):
     def __init__(self):
         prompt = MULTIPLE_CHOICE
         role = "You're professional Quiz Generator!"
-        key = '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'
-        super().__init__(prompt, role, key)
+        super().__init__(prompt, role, KEY)
         
     def request(self, metadata):
         return super().request(metadata)
@@ -76,8 +76,7 @@ class SummaryClient(OpenClient):
     def __init__(self):
         prompt = SUMMARIZATION
         role = "You're professional Summarization Generator!"
-        key = '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'
-        super().__init__(prompt, role, key)
+        super().__init__(prompt, role, KEY)
         
     def request(self, metadata):
         return super().request(metadata)
