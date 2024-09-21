@@ -93,13 +93,17 @@ class SummaryConsumer(Consumer):
                     result = c1.request([data])
                     print(result)
                     
+                    summary = ""
+                    for sentence in result["summarization"]:
+                        summary += f"{sentence}<br/>"
+                    
                     response = {
                         "id": r_id,
-                        "summarization": result["summarization"],
+                        "summary": summary,
                         "keywords": result['keywords']
                     }
                     
-                    pd.send(json.dumps(response))
+                    pd.send(json.dumps(response, ensure_ascii = False ))
                     
         except KeyboardInterrupt:
             print(f'Error occured while consuming topic {self.topic}')
@@ -133,6 +137,7 @@ class WorkbookConsumer(Consumer):
                     for id in idList: dataList.append(records.fetch_records_one(id))
                     
                     if len(dataList) == 0: continue
+                    userID = dataList[0]['u_id']
                     print(dataList)
                     
                     text_merged = '[0]'
@@ -150,7 +155,8 @@ class WorkbookConsumer(Consumer):
                     # # language = requestObject['language']
                     result = c1.request([text_merged, f'{count}', f'{language}'])
                     response = {
-                        "idList": idList,
+                        "userId": userID,
+                        "title": result["title"],
                         "questions": result["questions"]   
                     }
                     
