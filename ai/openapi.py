@@ -31,7 +31,8 @@ Domain Knowledge :
 2) Return your response entirely in the form of a JSON object. 
 2-1) The JSON object should have a key named "summarization" which is a result of summarization and correction. 
 2-2) Also have a key named "keywords", which is array of each keyword.
-2-3) "Summarization" is bullet-pointed, which is array of each emphasized sentence
+2-3) "Summarization" is bullet-pointed, which is array of each emphasized complete-sentence.
+2-3) Index 0 of "summarization" is the title of text emphasized using markdown grammar.
 """
 
 KEY = os.environ['OPENAI_API_KEY']
@@ -53,7 +54,7 @@ class OpenClient:
             ],
             n = 1,
             temperature=1,
-            max_tokens=2048
+            max_tokens=3000
         )
         
         result = response.choices[0].message.content        
