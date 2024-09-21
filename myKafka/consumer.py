@@ -129,6 +129,7 @@ class WorkbookConsumer(Consumer):
                 for message in client:
                     if not message or message == '': continue
                     requestObject = json.loads(message.value)
+                    print(requestObject)
                     idList = requestObject['idList']
                     urlList = requestObject['urlList']
                     print(idList, urlList)
