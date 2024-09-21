@@ -40,34 +40,26 @@ class TestConsumer(Consumer):
     def run(self):
         
         client = self.configuration()
-        key = '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'
-        # c1 = TestClient(SUMMARIZATION, "You're Summarization Machine!", key = key)
         c1 = SummaryClient()
         
-        self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
+        self.running = True            
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    data = message.value
+                    
+                    result = c1.request([data])
+                    rs_id = summaries.insert_summaries(2, result["summarization"])
+                    print(rs_id)
+                    if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
+                    
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
             
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        data = message.value
-                        
-                        result = c1.request([data])
-                        # print(data)
-                        # print(result)
-                        # print(result["summarization"])
-                        # print(result["keywords"])
-                        rs_id = summaries.insert_summaries(2, result["summarization"])
-                        print(rs_id)
-                        if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
-                        
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+        finally:
+            client.close()
 
 
 class SummaryConsumer(Consumer):
@@ -83,35 +75,35 @@ class SummaryConsumer(Consumer):
         pd = TestProducer('summary_done')
         
         self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        r_id = message.value
-                        print('Summary', r_id)
+        
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    r_id = message.value
+                    print('Summary', r_id)
 
-                        record = records.fetch_records_one(r_id)
-                        if 'transcript' not in record: continue
-                        print(record)
-                        
-                        data = record['transcript']
-                        result = c1.request([data])
-                        print(result)
-                        
-                        response = {
-                            "id": r_id,
-                            "summarization": result["summarization"],
-                            "keywords": result['keywords']
-                        }
-                        
-                        pd.send(response)
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+                    record = records.fetch_records_one(r_id)
+                    if 'transcript' not in record: continue
+                    print(record)
+                    
+                    data = record['transcript']
+                    result = c1.request([data])
+                    print(result)
+                    
+                    response = {
+                        "id": r_id,
+                        "summarization": result["summarization"],
+                        "keywords": result['keywords']
+                    }
+                    
+                    pd.send(response)
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
+            
+        finally:
+            client.close()
 
 
 class WorkbookConsumer(Consumer):
@@ -126,23 +118,24 @@ class WorkbookConsumer(Consumer):
         pd = TestProducer('problem_done')
         
         self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        raw_text = message.value
-                        print('Workbook', raw_text)
-                        
-                        result = c1.request([raw_text, '5', 'English'])
-                        
-                        today = datetime.today().strftime('%Y-%m-%d')
-                        w_id = workbooks.insert_workbooks(1, today, str(result))
-                        pd.send(w_id)
-                        print(w_id, result)
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    raw_text = message.value
+                    print('Workbook', raw_text)
+                    
+                    count = 10
+                    language = 'Eng'
+                    result = c1.request([raw_text, f'{count}', f'{language}'])
+                    
+                    today = datetime.today().strftime('%Y-%m-%d')
+                    w_id = workbooks.insert_workbooks(1, today, str(result))
+                    pd.send(w_id)
+                    print(w_id, result)
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
+            
+        finally:
+            client.close()
