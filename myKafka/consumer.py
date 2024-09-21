@@ -151,8 +151,9 @@ class WorkbookConsumer(Consumer):
                           
                     count = 5
                     # # count = requestObject['count']
-                    language = 'Ko'
-                    # # language = requestObject['language']
+                    # language = 'Ko'
+                    
+                    language = requestObject['language']
                     result = c1.request([text_merged, f'{count}', f'{language}'])
                     response = {
                         "userId": userID,
