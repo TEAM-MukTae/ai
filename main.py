@@ -1,31 +1,49 @@
-from typing import Union
 from fastapi import FastAPI
-from myKafka.consumer import TestConsumer, Consumer, SummaryConsumer, WorkbookConsumer
-from concurrent.futures import ThreadPoolExecutor
-
+from myKafka.consumer import Consumer, SummaryConsumer, WorkbookConsumer
+import asyncio
 
 app = FastAPI()
+
+# Kafka Consumers
 c1 = SummaryConsumer()
 c2 = WorkbookConsumer()
-WORKERS = 6
+consumer_tasks = []
 
 @app.get("/")
-def read_root(): return {"Hello": "World"}
+def read_root():
+    return {"Hello": "World"}
 
 @app.get('/test')
-def test(): return "Test Response"
+def test():
+    return "Test Response"
+
+async def start_consumer(consumer: Consumer):
+    try:
+        await asyncio.to_thread(consumer.run)
+    except Exception as e:
+        print(f"Error starting consumer: {consumer}, {e}")
+
+async def stop_consumer(consumer: Consumer):
+    try:
+        await asyncio.to_thread(consumer.close)
+    except Exception as e:
+        print(f"Error stopping consumer: {consumer}, {e}")
 
 @app.on_event("startup")
 async def startup_event():
-    with ThreadPoolExecutor(WORKERS) as executor:
-        executor.submit(start, c1)
-        executor.submit(start, c2)
-    
-@app.on_event("shutdown")
-def shutdown_event():
-    with ThreadPoolExecutor(WORKERS) as executor:
-        executor.submit(stop, c1)
-        executor.submit(stop, c2)
+    global consumer_tasks
+    consumer_tasks = [
+        asyncio.create_task(start_consumer(c1)),
+        asyncio.create_task(start_consumer(c2)),
+    ]
+    print("Consumers started.")
 
-def start(consumer: Consumer): consumer.run()
-def stop(consumer: Consumer): consumer.close()
+@app.on_event("shutdown")
+async def shutdown_event():
+    for task in consumer_tasks: task.cancel()
+    await asyncio.gather(
+        stop_consumer(c1),
+        stop_consumer(c2),
+        return_exceptions=True
+    )
+    print("Consumers stopped.")
