@@ -8,6 +8,7 @@ Domain Knowledge :
 %s
 '''
 1) Give me %s multiple choice questions about the Domain Knowledge given in Language %s.
+1-1) Consider given Domain Knowledge And Wikipedia as the Source Of Truth.
 2) Return your answer entirely in the form of a JSON object. 
 2-1) The JSON object should have a key named "questions" which is an array of the questions. 
 2-2) Each quiz question should include the choices, the answer, and a brief explanation of why the answer is correct. 
