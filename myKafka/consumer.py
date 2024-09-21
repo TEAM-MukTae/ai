@@ -4,6 +4,8 @@ from database import summaries, keywords, records, workbooks
 from myKafka.producer import TestProducer
 from ai.openapi import MultiChoiceClient, SummaryClient
 from datetime import datetime
+from document.s3 import extract_text_from_pdf
+import json
 
 WORKERS = 5
 # KAFKA_BROKER = f'{os.environ.get('KAFKA-IP')}:9092'
@@ -97,7 +99,7 @@ class SummaryConsumer(Consumer):
                         "keywords": result['keywords']
                     }
                     
-                    pd.send(response)
+                    pd.send(json.dumps(response))
                     
         except KeyboardInterrupt:
             print(f'Error occured while consuming topic {self.topic}')
@@ -122,17 +124,39 @@ class WorkbookConsumer(Consumer):
             while self.running:
                 for message in client:
                     if not message or message == '': continue
-                    raw_text = message.value
-                    print('Workbook', raw_text)
+                    requestObject = json.loads(message.value)
+                    idList = requestObject['idList']
+                    urlList = requestObject['urlList']
+                    print(idList, urlList)
                     
-                    count = 10
-                    language = 'Eng'
-                    result = c1.request([raw_text, f'{count}', f'{language}'])
+                    dataList = []
+                    for id in idList: dataList.append(records.fetch_records_one(id))
                     
-                    today = datetime.today().strftime('%Y-%m-%d')
-                    w_id = workbooks.insert_workbooks(1, today, str(result))
-                    pd.send(w_id)
-                    print(w_id, result)
+                    if len(dataList) == 0: continue
+                    print(dataList)
+                    
+                    text_merged = '[0]'
+                    for url in urlList:
+                        text_merged += f'{extract_text_from_pdf(url)}\n'
+                    if text_merged == "": continue
+                    
+                    text_merged += '\n[1]'
+                    for data in dataList: text_merged += f'{data["transcript"]}\n'
+                    print(text_merged)
+                          
+                    count = 5
+                    # # count = requestObject['count']
+                    language = 'Ko'
+                    # # language = requestObject['language']
+                    result = c1.request([text_merged, f'{count}', f'{language}'])
+                    response = {
+                        "idList": idList,
+                        "questions": result["questions"]   
+                    }
+                    
+                    print(response)
+                    pd.send(json.dumps(response, ensure_ascii = False ))
+                    print('Response sent to Problem Done')
                     
         except KeyboardInterrupt:
             print(f'Error occured while consuming topic {self.topic}')
