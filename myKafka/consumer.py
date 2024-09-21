@@ -157,7 +157,7 @@ class WorkbookConsumer(Consumer):
                     result = c1.request([text_merged, f'{count}', f'{language}'])
                     response = {
                         "userId": userID,
-                        "title": result["title"],
+                        "title": "임시 타이틀 (연결되면 바꿈)",
                         "questions": result["questions"]   
                     }
                     
