@@ -134,8 +134,8 @@ class WorkbookConsumer(Consumer):
                     urlList = requestObject['urlList']
                     print(idList, urlList)
                     
-                    dataList = []
-                    for id in idList: dataList.append(records.fetch_records_one(id))
+                    dataList = records.fetch_records(idList)
+                    # for id in idList: dataList.append(records.fetch_records_one(id))
                     
                     if len(dataList) == 0: continue
                     userID = dataList[0]['u_id']
