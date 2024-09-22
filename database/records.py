@@ -14,7 +14,7 @@ def fetch_records_one(id: int) -> tuple:
             return {}
         
 
-def fetch_records(idList: list) -> tuple:
+def fetch_records(idList: list) -> list:
     with get_connection() as connection:
         try:
             with connection.cursor(DictCursor) as cursor:
@@ -23,7 +23,4 @@ def fetch_records(idList: list) -> tuple:
         
         except Exception as e:
             print(f'Error occurred while fetching records: {e}')
-            return ()
-        
-        finally:
-            connection.close()
+            return []
