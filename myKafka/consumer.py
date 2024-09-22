@@ -4,6 +4,8 @@ from database import summaries, keywords, records, workbooks
 from myKafka.producer import TestProducer
 from ai.openapi import MultiChoiceClient, SummaryClient
 from datetime import datetime
+from document.s3 import extract_text_from_pdf
+import json
 
 WORKERS = 5
 # KAFKA_BROKER = f'{os.environ.get('KAFKA-IP')}:9092'
@@ -40,34 +42,26 @@ class TestConsumer(Consumer):
     def run(self):
         
         client = self.configuration()
-        key = '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'
-        # c1 = TestClient(SUMMARIZATION, "You're Summarization Machine!", key = key)
         c1 = SummaryClient()
         
-        self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
+        self.running = True            
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    data = message.value
+                    
+                    result = c1.request([data])
+                    rs_id = summaries.insert_summaries(2, result["summarization"])
+                    print(rs_id)
+                    if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
+                    
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
             
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        data = message.value
-                        
-                        result = c1.request([data])
-                        # print(data)
-                        # print(result)
-                        # print(result["summarization"])
-                        # print(result["keywords"])
-                        rs_id = summaries.insert_summaries(2, result["summarization"])
-                        print(rs_id)
-                        if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
-                        
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+        finally:
+            client.close()
 
 
 class SummaryConsumer(Consumer):
@@ -83,32 +77,39 @@ class SummaryConsumer(Consumer):
         pd = TestProducer('summary_done')
         
         self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        r_id = message.value
-                        print('Summary', r_id)
+        
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    r_id = json.loads(message.value)
+                    print('Summary', r_id)
 
-                        record = records.fetch_records_one(r_id)
-                        if 'transcript' not in record: continue
-                        print(record)
-                        
-                        data = record['transcript']
-                        result = c1.request([data])
-                        print(result)
-                        
-                        rs_id = summaries.insert_summaries(r_id, result["summarization"])
-                        print(rs_id)
-                        if rs_id > 0: keywords.insert_keywords(rs_id, result['keywords'])
-                        pd.send(rs_id)
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+                    record = records.fetch_records_one(r_id)
+                    if 'transcript' not in record: continue
+                    print(record)
+                    
+                    data = record['transcript']
+                    result = c1.request([data])
+                    print(result)
+                    
+                    summary = ""
+                    for sentence in result["summarization"]:
+                        summary += f"{sentence}<br/>"
+                    
+                    response = {
+                        "id": r_id,
+                        "summary": summary,
+                        "keywords": result['keywords']
+                    }
+                    
+                    pd.send(json.dumps(response, ensure_ascii = False ))
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
+            
+        finally:
+            client.close()
 
 
 class WorkbookConsumer(Consumer):
@@ -123,23 +124,51 @@ class WorkbookConsumer(Consumer):
         pd = TestProducer('problem_done')
         
         self.running = True
-        with ThreadPoolExecutor(WORKERS) as executor:
-            try:
-                while self.running:
-                    for message in client:
-                        if not message or message == '': continue
-                        raw_text = message.value
-                        print('Workbook', raw_text)
-                        
-                        result = c1.request([raw_text, '5', 'English'])
-                        
-                        today = datetime.today().strftime('%Y-%m-%d')
-                        w_id = workbooks.insert_workbooks(1, today, str(result))
-                        pd.send(w_id)
-                        print(w_id, result)
-                        
-            except KeyboardInterrupt:
-                print(f'Error occured while consuming topic {self.topic}')
-                
-            finally:
-                client.close()
+        try:
+            while self.running:
+                for message in client:
+                    if not message or message == '': continue
+                    requestObject = json.loads(message.value)
+                    print(requestObject)
+                    idList = requestObject['idList']
+                    urlList = requestObject['urlList']
+                    print(idList, urlList)
+                    
+                    dataList = records.fetch_records(idList)
+                    # for id in idList: dataList.append(records.fetch_records_one(id))
+                    
+                    if len(dataList) == 0: continue
+                    userID = dataList[0]['u_id']
+                    print(dataList)
+                    
+                    text_merged = '[0]'
+                    for url in urlList:
+                        text_merged += f'{extract_text_from_pdf(url)}\n'
+                    if text_merged == "": continue
+                    
+                    text_merged += '\n[1]'
+                    for data in dataList: text_merged += f'{data["transcript"]}\n'
+                    print(text_merged)
+                          
+                    count = 5
+                    # # count = requestObject['count']
+                    # language = 'Ko'
+                    
+                    title = requestObject['title']
+                    language = requestObject['language']
+                    result = c1.request([text_merged, f'{count}', f'{language}'])
+                    response = {
+                        "userId": userID,
+                        "title": title,
+                        "questions": result["questions"]   
+                    }
+                    
+                    print(response)
+                    pd.send(json.dumps(response, ensure_ascii = False ))
+                    print('Response sent to Problem Done')
+                    
+        except KeyboardInterrupt:
+            print(f'Error occured while consuming topic {self.topic}')
+            
+        finally:
+            client.close()
