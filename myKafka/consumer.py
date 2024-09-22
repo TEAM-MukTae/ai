@@ -154,11 +154,12 @@ class WorkbookConsumer(Consumer):
                     # # count = requestObject['count']
                     # language = 'Ko'
                     
+                    title = requestObject['title']
                     language = requestObject['language']
                     result = c1.request([text_merged, f'{count}', f'{language}'])
                     response = {
                         "userId": userID,
-                        "title": "임시 타이틀 (연결되면 바꿈)",
+                        "title": title,
                         "questions": result["questions"]   
                     }
                     
