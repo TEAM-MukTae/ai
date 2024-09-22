@@ -25,10 +25,11 @@ Domain Knowledge :
 '''
 1) Summarize and correct about the Domain Knowledge And suggest me 4 important keywords about the Domain Knowledge.
 1-1) Include title text inside the "summarization".
-1-2) Consider the big context of whole Domain Knowledge.
-1-3) Emphasize the "title" insidee the "summarization" and important "keywords" in "summarization" using Markdown format
-1-4) Also be aware that "summarization" should be bullet-pointed summarization and it should be emphasize using **markdown grammer** so that It could listed.
-1-5) And you should use language given in the Domain Knowledge.
+1-2) Domain Knowledge is the result of Voice Recognition, So make it accurate and coherent in "summarization".
+1-3) Consider the big context of whole Domain Knowledge.
+1-4) Emphasize the "title" insidee the "summarization" and important "keywords" in "summarization" using Markdown format
+1-5) Also be aware that "summarization" should be bullet-pointed summarization and it should be emphasize using **markdown grammer** so that It could listed.
+1-6) And you should use language given in the Domain Knowledge.
 2) Return your response entirely in the form of a JSON object. 
 2-1) The JSON object should have a key named "summarization" which is a result of summarization and correction. 
 2-2) Also have a key named "keywords", which is array of each keyword.
